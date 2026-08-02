@@ -12,8 +12,17 @@ import Home from './pages/Home';
 function App() {
   const isLoaderFinished = useSelector((state) => state.theme.isLoaderFinished);
 
-  // Initialize Lenis Smooth Scroll
+  // Initialize Lenis Smooth Scroll (Optimized for desktop, native momentum scroll on touch devices)
   useEffect(() => {
+    // Check if touch device or small screen to prevent smooth scroll fighting mobile touch momentum & address bar height changes
+    const isTouchDevice =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 1024);
+
+    if (isTouchDevice) {
+      return;
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -24,14 +33,17 @@ function App() {
       touchMultiplier: 2,
     });
 
+    let rafId;
+
     function raf(time) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      rafId = requestAnimationFrame(raf);
     }
 
-    requestAnimationFrame(raf);
+    rafId = requestAnimationFrame(raf);
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       lenis.destroy();
     };
   }, []);

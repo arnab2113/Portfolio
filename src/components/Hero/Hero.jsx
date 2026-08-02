@@ -11,42 +11,17 @@ import {
   FaArrowDown,
   FaRocket,
   FaCode,
-  FaCheckCircle,
 } from 'react-icons/fa';
-import { SiReact, SiNodedotjs, SiMongodb, SiDocker, SiTailwindcss, SiJavascript } from 'react-icons/si';
+import { SiReact, SiNodedotjs, SiMongodb } from 'react-icons/si';
 import { personalDetails, heroData } from '../../constants/portfolioData';
 import profilePic from '../../assets/Profilepic.jpeg';
 
-const Hero = () => {
-  const shouldReduceMotion = useReducedMotion();
+// Memoized Typewriter Component to isolate high-frequency state updates from Hero parent
+const TypewriterText = React.memo(() => {
   const [typingIndex, setTypingIndex] = useState(0);
   const [currentText, setCurrentText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Mouse Parallax Effect Setup
-  const containerRef = useRef(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const springConfig = { damping: 25, stiffness: 120 };
-  const parallaxX = useSpring(mouseX, springConfig);
-  const parallaxY = useSpring(mouseY, springConfig);
-
-  const blob1X = useTransform(parallaxX, [-0.5, 0.5], [-35, 35]);
-  const blob1Y = useTransform(parallaxY, [-0.5, 0.5], [-35, 35]);
-  const blob2X = useTransform(parallaxX, [-0.5, 0.5], [40, -40]);
-  const blob2Y = useTransform(parallaxY, [-0.5, 0.5], [40, -40]);
-
-  const handleMouseMove = (e) => {
-    if (!containerRef.current || shouldReduceMotion) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(x);
-    mouseY.set(y);
-  };
-
-  // Typewriter effect logic
   useEffect(() => {
     const fullText = heroData.typingItems[typingIndex];
     let speed = isDeleting ? 40 : 80;
@@ -71,6 +46,47 @@ const Hero = () => {
 
     return () => clearTimeout(timer);
   }, [currentText, isDeleting, typingIndex]);
+
+  return (
+    <>
+      <span className="text-[#00E5FF] underline decoration-[#8B5CF6] decoration-wavy underline-offset-8">
+        {currentText}
+      </span>
+      <span className="inline-block w-0.5 h-7 ml-1 bg-[#00E5FF] animate-pulse" />
+    </>
+  );
+});
+
+TypewriterText.displayName = 'TypewriterText';
+
+const Hero = () => {
+  const shouldReduceMotion = useReducedMotion();
+
+  // Mouse Parallax Effect Setup
+  const containerRef = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const springConfig = { damping: 25, stiffness: 120 };
+  const parallaxX = useSpring(mouseX, springConfig);
+  const parallaxY = useSpring(mouseY, springConfig);
+
+  const blob1X = useTransform(parallaxX, [-0.5, 0.5], [-35, 35]);
+  const blob1Y = useTransform(parallaxY, [-0.5, 0.5], [-35, 35]);
+  const blob2X = useTransform(parallaxX, [-0.5, 0.5], [40, -40]);
+  const blob2Y = useTransform(parallaxY, [-0.5, 0.5], [40, -40]);
+
+  const handleMouseMove = (e) => {
+    if (!containerRef.current || shouldReduceMotion) return;
+    // Guard against running mouse parallax on touch/mobile devices to prevent GPU thrashing
+    if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 1024)) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
 
   const scrollToContact = () => {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
@@ -98,7 +114,7 @@ const Hero = () => {
     });
   };
 
-  // Animation variants
+  // Animation variants (Clean opacity/y transforms without CSS filter blur to prevent layer-switch flashing on mobile)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -111,11 +127,10 @@ const Hero = () => {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 25, filter: 'blur(8px)' },
+    hidden: { opacity: 0, y: 25 },
     visible: {
       opacity: 1,
       y: 0,
-      filter: 'blur(0px)',
       transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
     },
   };
@@ -125,7 +140,7 @@ const Hero = () => {
       id="hero"
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden bg-[#050816] selection:bg-[#00E5FF]/30 selection:text-white"
+      className="relative min-h-screen min-h-[100dvh] pt-28 pb-16 flex items-center justify-center overflow-hidden bg-[#050816] selection:bg-[#00E5FF]/30 selection:text-white transform-gpu"
     >
       {/* ==========================================
           FUTURISTIC ANIMATED BACKGROUND
@@ -134,7 +149,7 @@ const Hero = () => {
         {/* Dark Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#050816] via-[#080d26] to-[#050816]" />
 
-        {/* Large Blurred Colorful Blobs with Mouse Parallax */}
+        {/* Responsive GPU-Optimized Glowing Blobs */}
         <motion.div
           style={{ x: blob1X, y: blob1Y }}
           animate={
@@ -146,7 +161,7 @@ const Hero = () => {
                 }
           }
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-32 -left-32 w-[550px] h-[550px] bg-gradient-to-tr from-[#00E5FF]/25 via-[#8B5CF6]/20 to-transparent rounded-full blur-[140px]"
+          className="absolute -top-32 -left-32 w-[350px] sm:w-[550px] h-[350px] sm:h-[550px] bg-gradient-to-tr from-[#00E5FF]/25 via-[#8B5CF6]/20 to-transparent rounded-full blur-3xl lg:blur-[140px] transform-gpu will-change-transform"
         />
 
         <motion.div
@@ -160,10 +175,10 @@ const Hero = () => {
                 }
           }
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-10 -right-32 w-[600px] h-[600px] bg-gradient-to-bl from-[#EC4899]/20 via-[#8B5CF6]/25 to-transparent rounded-full blur-[150px]"
+          className="absolute bottom-10 -right-32 w-[380px] sm:w-[600px] h-[380px] sm:h-[600px] bg-gradient-to-bl from-[#EC4899]/20 via-[#8B5CF6]/25 to-transparent rounded-full blur-3xl lg:blur-[150px] transform-gpu will-change-transform"
         />
 
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#00E5FF]/5 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] sm:w-[800px] h-[500px] sm:h-[800px] bg-[#00E5FF]/5 rounded-full blur-3xl lg:blur-[160px] transform-gpu pointer-events-none" />
 
         {/* Floating Glowing Particles Grid */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent opacity-40" />
@@ -178,7 +193,7 @@ const Hero = () => {
                 }
           }
           transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-1/4 left-0 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF]/40 to-transparent blur-[1px]"
+          className="absolute top-1/4 left-0 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF]/40 to-transparent blur-[1px] transform-gpu"
         />
       </div>
 
@@ -232,10 +247,7 @@ const Hero = () => {
             className="h-12 sm:h-14 flex items-center justify-center lg:justify-start text-xl sm:text-2xl md:text-3xl font-heading font-semibold text-gray-200 mb-6"
           >
             <span className="text-gray-400 mr-3">I am a</span>
-            <span className="text-[#00E5FF] underline decoration-[#8B5CF6] decoration-wavy underline-offset-8">
-              {currentText}
-            </span>
-            <span className="inline-block w-0.5 h-7 ml-1 bg-[#00E5FF] animate-pulse" />
+            <TypewriterText />
           </motion.div>
 
           {/* Short Bio */}
@@ -312,26 +324,26 @@ const Hero = () => {
           className="lg:col-span-5 relative flex justify-center items-center mt-6 lg:mt-0"
         >
           {/* Glowing Ambient Backdrop Aura */}
-          <div className="absolute w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-tr from-[#00E5FF]/30 via-[#8B5CF6]/30 to-[#EC4899]/30 rounded-full blur-[90px] animate-pulse-glow" />
+          <div className="absolute w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-tr from-[#00E5FF]/30 via-[#8B5CF6]/30 to-[#EC4899]/30 rounded-full blur-2xl lg:blur-[90px] animate-pulse-glow transform-gpu" />
 
           {/* Outer Rotating Glowing Geometry Frame */}
           <motion.div
             animate={shouldReduceMotion ? {} : { rotate: 360 }}
             transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-            className="absolute w-[330px] sm:w-[410px] h-[330px] sm:h-[410px] rounded-[2.5rem] border border-[#00E5FF]/20 border-dashed"
+            className="absolute w-[330px] sm:w-[410px] h-[330px] sm:h-[410px] rounded-[2.5rem] border border-[#00E5FF]/20 border-dashed transform-gpu"
           />
 
           {/* Main Visual Profile Glass Card */}
           <motion.div
             whileHover={{ scale: 1.02, rotateY: 5 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="relative z-10 w-72 sm:w-80 md:w-96 h-[410px] sm:h-[440px] rounded-3xl p-[2px] bg-gradient-to-tr from-[#00E5FF] via-[#8B5CF6] to-[#EC4899] shadow-[0_0_50px_rgba(0,229,255,0.3)] backdrop-blur-xl"
+            className="relative z-10 w-72 sm:w-80 md:w-96 h-[410px] sm:h-[440px] rounded-3xl p-[2px] bg-gradient-to-tr from-[#00E5FF] via-[#8B5CF6] to-[#EC4899] shadow-[0_0_50px_rgba(0,229,255,0.3)] backdrop-blur-xl transform-gpu"
           >
             <div className="w-full h-full bg-[#070b22]/90 rounded-[22px] overflow-hidden relative flex flex-col items-center justify-between p-6 text-center border border-white/10">
               
               {/* Card Inner Glow Accent */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#00E5FF]/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#8B5CF6]/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#00E5FF]/10 rounded-full blur-xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#8B5CF6]/10 rounded-full blur-xl pointer-events-none" />
 
               {/* Top Card Badge */}
               <div className="w-full flex items-center justify-between z-10">
@@ -346,11 +358,13 @@ const Hero = () => {
                 <motion.div
                   animate={shouldReduceMotion ? {} : { y: [-6, 6, -6] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="relative w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-[#00E5FF] via-[#8B5CF6] to-[#EC4899] shadow-[0_0_35px_rgba(0,229,255,0.5)]"
+                  className="relative w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-[#00E5FF] via-[#8B5CF6] to-[#EC4899] shadow-[0_0_35px_rgba(0,229,255,0.5)] transform-gpu"
                 >
                   <img
                     src={profilePic}
                     alt="Arnab Maity"
+                    width={128}
+                    height={128}
                     className="w-full h-full rounded-full object-cover border-2 border-white/20"
                   />
                 </motion.div>
@@ -385,7 +399,7 @@ const Hero = () => {
           <motion.div
             animate={shouldReduceMotion ? {} : { y: [-12, 10, -12], rotate: [-2, 2, -2] }}
             transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -top-6 -left-4 sm:left-0 p-3 rounded-2xl glass-card border border-[#00E5FF]/40 shadow-[0_0_25px_rgba(0,229,255,0.3)] flex items-center gap-2.5 backdrop-blur-xl z-20"
+            className="absolute -top-6 -left-4 sm:left-0 p-3 rounded-2xl glass-card border border-[#00E5FF]/40 shadow-[0_0_25px_rgba(0,229,255,0.3)] flex items-center gap-2.5 backdrop-blur-xl z-20 transform-gpu"
           >
             <div className="w-9 h-9 rounded-xl bg-[#61DAFB]/10 flex items-center justify-center">
               <SiReact className="text-xl text-[#61DAFB] animate-spin" style={{ animationDuration: '12s' }} />
@@ -400,7 +414,7 @@ const Hero = () => {
           <motion.div
             animate={shouldReduceMotion ? {} : { y: [10, -12, 10], rotate: [2, -2, 2] }}
             transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -bottom-6 -right-4 sm:right-0 p-3 rounded-2xl glass-card border border-[#8B5CF6]/40 shadow-[0_0_25px_rgba(139,92,246,0.3)] flex items-center gap-2.5 backdrop-blur-xl z-20"
+            className="absolute -bottom-6 -right-4 sm:right-0 p-3 rounded-2xl glass-card border border-[#8B5CF6]/40 shadow-[0_0_25px_rgba(139,92,246,0.3)] flex items-center gap-2.5 backdrop-blur-xl z-20 transform-gpu"
           >
             <div className="w-9 h-9 rounded-xl bg-[#339933]/10 flex items-center justify-center">
               <SiNodedotjs className="text-xl text-[#339933]" />
@@ -415,7 +429,7 @@ const Hero = () => {
           <motion.div
             animate={shouldReduceMotion ? {} : { x: [-10, 10, -10] }}
             transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute top-1/2 -right-8 p-3 rounded-2xl glass-card border border-[#EC4899]/40 shadow-[0_0_25px_rgba(236,72,153,0.3)] hidden sm:flex items-center gap-2.5 backdrop-blur-xl z-20"
+            className="absolute top-1/2 -right-8 p-3 rounded-2xl glass-card border border-[#EC4899]/40 shadow-[0_0_25px_rgba(236,72,153,0.3)] hidden sm:flex items-center gap-2.5 backdrop-blur-xl z-20 transform-gpu"
           >
             <div className="w-9 h-9 rounded-xl bg-[#47A248]/10 flex items-center justify-center">
               <SiMongodb className="text-xl text-[#47A248]" />
@@ -437,7 +451,7 @@ const Hero = () => {
         onClick={scrollToAbout}
         animate={shouldReduceMotion ? {} : { y: [0, 10, 0] }}
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 hover:text-[#00E5FF] transition-colors focus:outline-none cursor-pointer z-20 group"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 hover:text-[#00E5FF] transition-colors focus:outline-none cursor-pointer z-20 group transform-gpu"
         aria-label="Scroll to About Section"
       >
         <span className="text-[11px] font-mono uppercase tracking-widest text-gray-400 group-hover:text-[#00E5FF] transition-colors">

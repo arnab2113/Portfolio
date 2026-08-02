@@ -21,6 +21,7 @@ body {
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
@@ -45,13 +46,23 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   background: rgba(0, 229, 255, 0.6);
 }
 
-/* Glassmorphism utility classes */
+/* Hardware Accelerated Glassmorphism utility classes */
 .glass-card {
   background: rgba(17, 24, 39, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@media (min-width: 769px) {
+  .glass-card {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
 }
 
 .glass-card-hover {
@@ -66,10 +77,20 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 .glass-nav {
-  background: rgba(5, 8, 22, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(5, 8, 22, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@media (min-width: 769px) {
+  .glass-nav {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }
 
 /* Text Gradient Utilities */
@@ -99,7 +120,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
-/* Glowing Blob animations */
+/* Hardware-Accelerated Glowing Blob animations (Opacity & Transform GPU scale instead of filter blur) */
 @keyframes floatSlow {
   0%, 100% {
     transform: translateY(0px) rotate(0deg) scale(1);
@@ -112,20 +133,22 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 @keyframes pulseGlow {
   0%, 100% {
     opacity: 0.4;
-    filter: blur(60px);
+    transform: scale(1);
   }
   50% {
     opacity: 0.7;
-    filter: blur(80px);
+    transform: scale(1.06);
   }
 }
 
 .animate-float-slow {
   animation: floatSlow 8s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-pulse-glow {
   animation: pulseGlow 6s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 /* Custom Magnetic Button & Interactive Ripple */

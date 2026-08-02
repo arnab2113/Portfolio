@@ -5,18 +5,22 @@ const Cursor = () => {
   const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
 
   useEffect(() => {
-    // Check touch screen capability
-    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-      setIsTouchDevice(true);
+    // Synchronously check touch screen / coarse pointer
+    const checkTouch =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches);
+
+    if (checkTouch) {
+      setIsTouch(true);
       return;
     }
 
     const onMouseMove = (e) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
-      if (!isVisible) setIsVisible(true);
+      setIsVisible(true);
     };
 
     const onMouseLeave = () => setIsVisible(false);
@@ -43,11 +47,11 @@ const Cursor = () => {
       }
     };
 
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
     document.addEventListener('mouseleave', onMouseLeave);
     document.addEventListener('mouseenter', onMouseEnter);
-    window.addEventListener('mouseover', handleMouseOver);
-    window.addEventListener('mouseout', handleMouseOut);
+    window.addEventListener('mouseover', handleMouseOver, { passive: true });
+    window.addEventListener('mouseout', handleMouseOut, { passive: true });
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
@@ -56,15 +60,15 @@ const Cursor = () => {
       window.removeEventListener('mouseover', handleMouseOver);
       window.removeEventListener('mouseout', handleMouseOut);
     };
-  }, [isVisible]);
+  }, []);
 
-  if (isTouchDevice || !isVisible) return null;
+  if (isTouch || !isVisible) return null;
 
   return (
     <>
       {/* Outer Follower Ring */}
       <motion.div
-        className="fixed top-0 left-0 pointer-events-none z-[9998] rounded-full border border-[#00E5FF]/60 mix-blend-screen"
+        className="fixed top-0 left-0 pointer-events-none z-[9998] rounded-full border border-[#00E5FF]/60 mix-blend-screen transform-gpu"
         animate={{
           x: mousePosition.x - (isHovered ? 24 : 16),
           y: mousePosition.y - (isHovered ? 24 : 16),
@@ -81,7 +85,7 @@ const Cursor = () => {
 
       {/* Inner Dot */}
       <motion.div
-        className="fixed top-0 left-0 pointer-events-none z-[9999] rounded-full bg-[#00E5FF]"
+        className="fixed top-0 left-0 pointer-events-none z-[9999] rounded-full bg-[#00E5FF] transform-gpu"
         animate={{
           x: mousePosition.x - 4,
           y: mousePosition.y - 4,

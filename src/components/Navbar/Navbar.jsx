@@ -24,21 +24,29 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isScrolled = window.scrollY > 30;
+          setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
 
-      // Section scroll spy with threshold protection
-      const scrollPosition = window.scrollY + 250;
+          const scrollPosition = window.scrollY + 250;
 
-      for (let i = navItems.length - 1; i >= 0; i--) {
-        const item = navItems[i];
-        const section = document.getElementById(item.id);
-        if (section && section.offsetTop <= scrollPosition) {
-          if (activeSection !== item.id) {
-            dispatch(setActiveSection(item.id));
+          for (let i = navItems.length - 1; i >= 0; i--) {
+            const item = navItems[i];
+            const section = document.getElementById(item.id);
+            if (section && section.offsetTop <= scrollPosition) {
+              if (activeSection !== item.id) {
+                dispatch(setActiveSection(item.id));
+              }
+              break;
+            }
           }
-          break;
-        }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -57,7 +65,6 @@ const Navbar = () => {
 
   const handleResumeDownload = (e) => {
     e.preventDefault();
-    // Programmatically trigger actual file download
     const link = document.createElement('a');
     link.href = personalDetails.resumeUrl;
     link.download = 'Arnab_Maity_Resume.pdf';
@@ -76,7 +83,7 @@ const Navbar = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-[9000] transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[9000] transition-all duration-300 transform-gpu ${
         scrolled ? 'glass-nav py-3.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)]' : 'bg-transparent py-5'
       }`}
     >
@@ -156,7 +163,7 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="lg:hidden glass-nav border-t border-white/10 overflow-hidden"
+            className="lg:hidden glass-nav border-t border-white/10 overflow-hidden transform-gpu"
           >
             <div className="px-6 py-6 flex flex-col gap-3">
               {navItems.map((item) => {
