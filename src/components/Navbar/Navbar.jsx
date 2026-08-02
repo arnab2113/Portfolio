@@ -57,10 +57,21 @@ const Navbar = () => {
   const scrollToSection = (id) => {
     dispatch(setActiveSection(id));
     dispatch(setMobileMenuOpen(false));
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+
+    // Slight delay to allow mobile drawer menu close state to settle before calculating scroll position
+    setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        const headerOffset = 70;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth',
+        });
+      }
+    }, 60);
   };
 
   const handleResumeDownload = (e) => {
